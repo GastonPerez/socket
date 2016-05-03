@@ -25,23 +25,11 @@ public class Client extends SocketAbstract {
 
     public static void main(String[] args) throws Exception {
         String host = Inet4Address.getLocalHost().getHostAddress();
-        int port = 9999;
+        int port = 8989;
 
         Client client = new Client(host, port);
         client.start();
 
         client.write("Hola");
-        Thread.sleep(1000);
-        client.write("-----break-----");
-        Thread.sleep(1000);
-
-        client.read();
-
-        client.write("todo bien, vos?");
-        Thread.sleep(1000);
-        client.write("-----break-----");
-        Thread.sleep(1000);
-
-        client.read();
     }
 }
