@@ -1,9 +1,7 @@
 import java.io.IOException;
 import java.net.Inet4Address;
-import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
@@ -13,17 +11,24 @@ import java.util.Iterator;
 /**
  * Created by ext_gperez on 5/3/16.
  */
-public class SocketServer {
+public class SocketServer extends SocketAbstractClass {
 
-    private InetSocketAddress listenAddress;
     private Selector selector;
 
     public SocketServer(String host, int port) {
-        listenAddress = new InetSocketAddress(host, port);
+        super(host, port);
+        openSelector();
+    }
+
+    private void openSelector() {
+        try {
+            selector = Selector.open();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void start() throws IOException {
-        selector = Selector.open();
         ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
         serverSocketChannel.configureBlocking(false);
 
@@ -56,7 +61,7 @@ public class SocketServer {
                     accept(key);
                 } else if (key.isReadable()) {
                     read(key);
-                } else if (key.isWritable()) { // Personalizar en subclase
+                } else if (key.isWritable()) {
                     processMessage(key);
                     key.cancel();
                 }
@@ -76,18 +81,11 @@ public class SocketServer {
         socketChannel.register(selector, SelectionKey.OP_READ);
     }
 
-    //read from the socket channel
     private void read(SelectionKey key) throws IOException {
         SocketChannel socketChannel = (SocketChannel) key.channel();
-        ByteBuffer buffer = ByteBuffer.allocate(1024);
-        int numRead = socketChannel.read(buffer);
 
-        if (numRead > 0) {
-            byte[] data = new byte[numRead];
-            System.arraycopy(buffer.array(), 0, data, 0, numRead);
-            String message = new String(data);
-            System.out.println("Got: " + message);
-
+        String message = read(socketChannel);
+        if (message != null) {
             socketChannel.register(selector, SelectionKey.OP_WRITE, message);
         }
     }
@@ -104,13 +102,6 @@ public class SocketServer {
         }
         SocketChannel socketChannel = (SocketChannel) key.channel();
         write(result, socketChannel);
-    }
-
-    public void write(String message, SocketChannel socketChannel) throws IOException {
-        byte [] msg = message.getBytes();
-        ByteBuffer buffer = ByteBuffer.wrap(msg);
-        socketChannel.write(buffer);
-        buffer.clear();
     }
 
     public static void main(String[] args) throws Exception {
