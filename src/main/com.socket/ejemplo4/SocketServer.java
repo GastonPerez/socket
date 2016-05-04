@@ -1,11 +1,7 @@
 import java.io.IOException;
-import java.net.Inet4Address;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.*;
 import java.util.Iterator;
 
 /**
@@ -14,10 +10,12 @@ import java.util.Iterator;
 public class SocketServer extends SocketAbstractClass {
 
     private Selector selector;
+    private MessagesHandler messagesHandler;
 
     public SocketServer(String host, int port) {
         super(host, port);
         openSelector();
+        messagesHandler = new MessagesHandler();
     }
 
     private void openSelector() {
@@ -60,10 +58,9 @@ public class SocketServer extends SocketAbstractClass {
                 if (key.isAcceptable()) {
                     accept(key);
                 } else if (key.isReadable()) {
-                    read(key);
+                    processRequest(key);
                 } else if (key.isWritable()) {
-                    processMessage(key);
-                    key.cancel();
+                    write(key);
                 }
             }
         }
@@ -81,34 +78,23 @@ public class SocketServer extends SocketAbstractClass {
         socketChannel.register(selector, SelectionKey.OP_READ);
     }
 
-    private void read(SelectionKey key) throws IOException {
+    public void processRequest(SelectionKey key) throws IOException {
         SocketChannel socketChannel = (SocketChannel) key.channel();
-
         String message = read(socketChannel);
-        if (message != null) {
-            socketChannel.register(selector, SelectionKey.OP_WRITE, message);
-        }
+
+        String result = messagesHandler.processMessage(message);
+
+        socketChannel.register(selector, SelectionKey.OP_WRITE, result);
     }
 
-    public void processMessage(SelectionKey key) throws IOException {
-        String message = (String) key.attachment();
-        String result;
-        if (message.equals("1")) {
-            result = "Me enviaste un 1 (uno)";
-        } else if (message.equals("2")) {
-            result = "Me enviaste un 2 (dos)";
-        } else {
-            result = "No enviaste ni un 1 (uno) ni un 2 (dos)";
-        }
+    public void write(SelectionKey key) throws IOException {
+        String attach = "";
         SocketChannel socketChannel = (SocketChannel) key.channel();
-        write(result, socketChannel);
-    }
-
-    public static void main(String[] args) throws Exception {
-        String host = Inet4Address.getLocalHost().getHostAddress();
-        int port = 8989;
-
-        SocketServer socketServer = new SocketServer(host, port);
-        socketServer.start();
+        Object result = key.attachment();
+        if (result != null) {
+            attach = (String) key.attachment();
+        }
+        write(attach, socketChannel);
+        key.cancel();
     }
 }

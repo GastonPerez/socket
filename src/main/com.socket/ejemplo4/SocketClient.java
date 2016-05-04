@@ -1,5 +1,4 @@
 import java.io.IOException;
-import java.net.Inet4Address;
 import java.nio.channels.SocketChannel;
 
 /**
@@ -29,19 +28,5 @@ public class SocketClient extends SocketAbstractClass {
 
     public void read() throws IOException {
         read(socketChannel);
-    }
-
-    public static void main(String[] args) throws Exception {
-        String host = Inet4Address.getLocalHost().getHostAddress();
-        int port = 8989;
-
-        SocketClient socketClient = new SocketClient(host, port);
-        socketClient.start();
-
-        socketClient.write("3");
-
-        Thread.sleep(1000);
-
-        socketClient.read();
     }
 }

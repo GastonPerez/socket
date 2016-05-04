@@ -32,6 +32,8 @@ public abstract class SocketAbstractClass {
             byte[] data = new byte[numRead];
             System.arraycopy(buffer.array(), 0, data, 0, numRead);
             message = new String(data);
+
+            System.out.print(Thread.currentThread().getName() + ": ");
             System.out.println("Got: " + message);
         }
         return message;
